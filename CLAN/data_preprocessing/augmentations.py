@@ -54,3 +54,54 @@ def select_transformation(aug_method, seq_len):
         return ValueError
         
     return my_aug
+
+def jitter(x, sigma=0.8):
+    # https://arxiv.org/pdf/1706.00527.pdf
+    return x + np.random.normal(loc=0., scale=sigma, size=x.shape)
+
+class SCALE():
+    def __init__(self, sigma=1.1, loc=1.3):
+        self.sigma = sigma
+        self.loc = loc
+    
+    def augment(self, x):
+        # https://arxiv.org/pdf/1706.00527.pdf
+        # loc -> multiplication #
+        factor = np.random.normal(loc=self.loc, scale=self.sigma, size=(x.shape[0], x.shape[2]))
+        ai = []
+        for i in range(x.shape[1]):
+            xi = x[:, i, :]
+            ai.append(np.multiply(xi, factor[:, :])[:, np.newaxis, :])
+        return np.concatenate((ai), axis=1)
+
+class PERMUTE():   
+    def __init__(self, min_segments=2, max_segments=15, seg_mode="random"):
+        self.min = min_segments
+        self.max = max_segments
+        self.seg_mode = seg_mode
+
+    def augment(self, x):
+        # input : (N, T, C)
+        # Be cautious with reshaping and swapaxes/transpose
+        orig_steps = np.arange(x.shape[1])
+
+        num_segs = np.random.randint(self.min, self.max, size=(x.shape[0]))
+
+        ret = np.zeros_like(x)
+        
+        # For each sample
+        for i, pat in enumerate(x):
+            if num_segs[i] > 1:
+                if self.seg_mode == "random":
+                    split_points = np.random.choice(x.shape[1] - 2, num_segs[i] - 1, replace=False)
+                    split_points.sort()                
+                    splits = np.split(orig_steps, split_points)
+                else:
+                    splits = np.array_split(orig_steps, num_segs[i])
+                warp = np.concatenate(np.random.permutation(splits)).ravel()
+                ret[i] = pat[warp, :]
+            else:
+                ret[i] = pat
+
+        # return torch.from_numpy(ret)
+        return ret
