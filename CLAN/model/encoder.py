@@ -139,13 +139,5 @@ class TFC_GOAD(nn.Module):
         encoder_layers = TransformerEncoderLayer(configs.TSlength_aligned, dim_feedforward=2*configs.TSlength_aligned, nhead=1, )
         self.transformer_encoder = TransformerEncoder(encoder_layers, 2)
 
-        self.projector = nn.Sequential(
-            nn.Linear(configs.TSlength_aligned * configs.input_channels, 256),
-            nn.BatchNorm1d(256),
-            nn.ReLU(),
-            nn.Linear(256, 256)
-        )
-
-        self.linear = nn.Linear(256, num_classes)    
 
 
