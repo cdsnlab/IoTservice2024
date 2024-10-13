@@ -3,18 +3,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-
-def get_similarity_matrix(outputs, chunk=2, multi_gpu=False):
-    '''
-        Compute similarity matrix
-        - outputs: (B', d) tensor for B' = B * chunk
-        - sim_matrix: (B', B') tensor
-    '''
-
-    sim_matrix = torch.mm(outputs, outputs.t())  # (B', d), (d, B') -> (B', B')
-
-    return sim_matrix
-
 def get_similarity_two_matrix(output1, output2, chunk=2, multi_gpu=False):
     '''
         Compute similarity matrix
