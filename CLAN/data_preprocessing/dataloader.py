@@ -52,3 +52,23 @@ def z_score(df):
         
     return df_std
 
+class TimeseriesDataset(Dataset):   
+    def __init__(self, data, window, target_cols):
+        self.data = torch.Tensor(data)
+        self.window = window
+        self.target_cols = target_cols
+        self.shape = self.__getshape__()
+        self.size = self.__getsize__() 
+    def __getitem__(self, index):
+        x = self.data[index:index+self.window]
+        y = self.data[index+self.window,0:target_cols]
+        return x, y 
+    def __len__(self):
+        return len(self.data) -  self.window     
+    def __getshape__(self):
+        return (self.__len__(), *self.__getitem__(0)[0].shape)    
+    def __getsize__(self):
+        return (self.__len__())
+
+
+
