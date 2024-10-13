@@ -28,14 +28,14 @@ def NT_xent(sim_matrix, a, temperature=0.5, chunk=2, eps=1e-8):
 
     # Create mask for positive pairs between each sample and its counterpart
     basic_mask = torch.zeros_like(sim_matrix).to(device)
-    basic_mask[:B, B:] = torch.eye(B).to(device)  # [0:B]와 [B:2*B] 사이의 양의 쌍
-    basic_mask[B:, :B] = torch.eye(B).to(device)  # 대칭적으로 양의 쌍 설정
+    basic_mask[:B, B:] = torch.eye(B).to(device)  # Positive pairs between [0:B] and [B:2*B]
+    basic_mask[B:, :B] = torch.eye(B).to(device)  # Symmetrically set positive pairs
 
     # Create mask for each group
     group_mask = torch.zeros_like(sim_matrix).to(device)
     for i in range(0, B, a):
-        group_mask[i:i + a, B + i:B + i + a] = 1  # 그룹 내에서 양의 쌍으로 설정
-        group_mask[B + i:B + i + a, i:i + a] = 1  # 대칭적으로 설정
+        group_mask[i:i + a, B + i:B + i + a] = 1  # Set as positive pairs within the group
+        group_mask[B + i:B + i + a, i:i + a] = 1  # Symmetrically set the mask
 
     # Combine the masks to include both types of positive pairings
     combined_mask = basic_mask + group_mask
@@ -54,7 +54,7 @@ def NT_xent(sim_matrix, a, temperature=0.5, chunk=2, eps=1e-8):
 def NT_xent_TF(sim_matrix, temperature=0.5, chunk=2, eps=1e-8):
     '''
         Compute NT_xent loss
-        - sim_matrix: (B', B') tensor for B' = B * chunk (first 2B are pos samples)
+        - sim_matrix: (B', B') tensor for B' = B * chunk (first 2B are positive samples)
     '''
     device = sim_matrix.device    
 
@@ -68,7 +68,7 @@ def NT_xent_TF(sim_matrix, temperature=0.5, chunk=2, eps=1e-8):
     sim_matrix = -torch.log(sim_matrix / (denom + eps) + eps)  # loss matrix
     
 
-    # normal & orginal closer and shifted & shifted closer / negative pairs are not calculated 
+    # normal & original closer and shifted & shifted closer / negative pairs are not calculated 
     loss = torch.sum(sim_matrix[:].diag())  / (B)
 
     return loss
@@ -76,7 +76,7 @@ def NT_xent_TF(sim_matrix, temperature=0.5, chunk=2, eps=1e-8):
 def Supervised_NT_xent(sim_matrix, labels, temperature=0.5, chunk=2, eps=1e-8, multi_gpu=False):
     '''
         Compute NT_xent loss
-        - sim_matrix: (B', B') tensor for B' = B * chunk (first 2B are pos samples)
+        - sim_matrix: (B', B') tensor for B' = B * chunk (first 2B are positive samples)
     '''
 
     device = sim_matrix.device
@@ -96,7 +96,7 @@ def Supervised_NT_xent(sim_matrix, labels, temperature=0.5, chunk=2, eps=1e-8, m
 
     labels = labels.contiguous().view(-1, 1)
     Mask = torch.eq(labels, labels.t()).float().to(device)
-    #Mask = eye * torch.stack([labels == labels[i] for i in range(labels.size(0))]).float().to(device)
+    # Mask for matching labels to create positive pairs
     Mask = Mask / (Mask.sum(dim=1, keepdim=True) + eps)
 
     loss = torch.sum(Mask * sim_matrix) / (2 * B)
@@ -106,9 +106,3 @@ def Supervised_NT_xent(sim_matrix, labels, temperature=0.5, chunk=2, eps=1e-8, m
 def get_similarity_matrix(outputs, chunk=2, multi_gpu=False):
     sim_matrix = torch.mm(outputs, outputs.t())  # (B', d), (d, B') -> (B', B')
     return sim_matrix
-
-
-#     loss = torch.sum(sim_matrix[:B, B:].diag() + sim_matrix[B:, :B].diag()) / (2 * B)
-
-#     return loss
-    
