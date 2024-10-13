@@ -2,6 +2,7 @@ from torch import nn
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 import torch.nn.functional as F
 import math
+
 """Two contrastive encoders"""
 class TFC(nn.Module):
     def __init__(self, configs, args):
@@ -148,16 +149,3 @@ class TFC_GOAD(nn.Module):
         self.linear = nn.Linear(256, num_classes)    
 
 
-    def forward(self, x_in):
-
-        """Use Transformer"""
-        x = self.transformer_encoder(x_in.float())
-        h = x.reshape(x.shape[0], -1)
-
-        """Cross-space projector"""
-        z = self.projector(h)
-
-        """Shifted transformation classifier"""
-        s = self.linear(z)
-
-        return h, z, s
