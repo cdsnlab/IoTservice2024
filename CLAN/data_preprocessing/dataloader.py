@@ -498,3 +498,17 @@ def sort_only_label(label_list):
         label_list[i] = changed_label_list[types_label_list.index(label_list[i])]
 
     return label_list 
+
+def delete_label(data_list, label_list, deleted_label):    
+    count = 0
+    while count < len(data_list):
+
+        if label_list[count] == (deleted_label-1):
+            data_list = torch.cat([data_list[0:count], data_list[count+1:]])
+            del label_list[count]
+            count = count-1
+
+        count = count+1        
+    label_list = sort_only_label(label_list)
+
+    return data_list, label_list
