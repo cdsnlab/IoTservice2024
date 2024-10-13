@@ -131,11 +131,6 @@ class target_classifier(nn.Module):
         pred = self.logits_simple(emb)
         return pred
 
-"""One contrastive encoders"""
-class TFC_GOAD(nn.Module):
-    def __init__(self, configs, num_classes):
-        super(TFC_GOAD, self).__init__()
-
         encoder_layers = TransformerEncoderLayer(configs.TSlength_aligned, dim_feedforward=2*configs.TSlength_aligned, nhead=1, )
         self.transformer_encoder = TransformerEncoder(encoder_layers, 2)
 
