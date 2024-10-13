@@ -135,3 +135,30 @@ def count_label_labellist(labellist):
                 
     return types_label_list, count_label_list
 
+def padding_by_max(lengthlist, normalized_df):
+   
+    # reconstruction of datalist    
+    datalist=[]
+    reconst_list =[]
+    count_lengthlist = 0
+    print("max padding (length): ", max(lengthlist))
+
+    # reconstruction of normalized list    
+    # for each row
+    for i in range(len(lengthlist)):
+        reconst_list =[]    
+        # cut df by each length
+        for j in range(count_lengthlist,(count_lengthlist+lengthlist[i])):
+            reconst_list.append(normalized_df.iloc[j,:].tolist())            
+        count_lengthlist += lengthlist[i]
+
+        #padding to each data list
+        if((max(lengthlist)-lengthlist[i])%2 == 0):
+            p2d = (0, 0, int((max(lengthlist)-lengthlist[i])/2), int((max(lengthlist)-lengthlist[i])/2))
+        else :
+            p2d = (0, 0, int((max(lengthlist)-lengthlist[i]+1)/2)-1, int((max(lengthlist)-lengthlist[i]+1)/2))
+        datalist.append(F.pad(torch.tensor(reconst_list),p2d,"constant", -1))
+        
+    # convert to tensor    
+    datalist = torch.stack(datalist)
+    return datalist
