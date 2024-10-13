@@ -522,3 +522,30 @@ def change_label(label_list, deleted_label):
     sort_only_label(label_list)
 
     return label_list
+    
+# split data into train/validate/test 
+def loading_data(dataset, args): 
+    
+    padding, timespan, min_seq, min_samples, aug_method, aug_wise = \
+    args.padding, args.timespan, args.min_seq, args.min_samples, args.aug_method, args.aug_wise
+
+    # Constructing data structure for each dataset
+    if dataset == 'lapras':
+        dataset_list = laprasLoader('data/Lapras/*.csv', timespan, min_seq)        
+        #visualization_data(dataset_list, 'KDD2022/data/Lapras/', 5)
+    elif dataset == 'lapras_null':
+        dataset_list = laprasLoader('data/Lapras_null/*.csv', timespan, min_seq)        
+        #visualization_data(dataset_list, 'KDD2022/data/Lapras/', 5)
+    elif dataset == 'casas':
+        dataset_list = casasLoader('data/CASAS/*.txt', timespan, min_seq)
+        #visualization_data(dataset_list, 'KDD2022/data/CASAS/', 15)
+    elif dataset == 'aras_a':
+        dataset_list = arasLoader('data/Aras/HouseA/*.txt', timespan, min_seq)
+        #visualization_data(dataset_list, 'KDD2022/data/Aras/HouseA/', 27*100 + 27)
+    elif dataset == 'opportunity':
+        dataset_list = opportunityLoader('data/Opportunity/*.dat', timespan, min_seq)
+        #visualization_data(dataset_list, 'KDD2022/data/Opportunity/', 5)
+    elif dataset == 'openpack':
+        dataset_list =  openpackLoader('data/OpenPack/*.csv', timespan, min_seq)
+    elif dataset == 'pamap':
+        dataset_list =  pamapLoader('data/PAMAP2/*dat', timespan, min_seq)
