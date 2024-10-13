@@ -569,3 +569,37 @@ def loading_data(dataset, args):
     print('-' * 100)
     print(('*'*5)+'Before padding'+('*'*5))
     types_label_list, count_label_list = count_label(dataset_list)
+
+        # convert object-list to list-list
+    label_list=[]
+    # store each length of instances
+    length_list=[]
+    # for temporal storage
+    temp_list=[]
+
+    # Normalized Module
+    # for each instance
+    for i in range(len(dataset_list)):
+            #datalist.append(dataset_list[i].data)        
+        label_list.append(dataset_list[i].label)
+        length_list.append(dataset_list[i].length)
+
+        for j in range(dataset_list[i].length):
+            temp_list.append(dataset_list[i].data[j])     
+               
+    # normalization of dataframe
+    #normalized_df = pd.DataFrame(temp_list)
+    #normalized_df = min_max_scaling(pd.DataFrame(temp_list))
+    normalized_df = z_score(pd.DataFrame(temp_list))
+    normalized_df = normalized_df.fillna(0)
+
+
+    # reconstruction of list (padding is option : max or mean)
+    if padding == 'max':
+        datalist = padding_by_max(length_list, normalized_df)
+        #print('tensor_shape', datalist.size())
+    elif padding =='mean':
+        datalist = padding_by_mean(length_list, normalized_df)
+        #print('tensor_shape', datalist.size())
+    else:
+        datalist = reconstrct_list(length_list, normalized_df)
