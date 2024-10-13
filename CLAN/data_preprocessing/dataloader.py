@@ -117,3 +117,21 @@ def count_label(dataset_list):
                 
     return types_label_list, count_label_list
 
+
+def count_label_labellist(labellist):
+    # finding types and counts of label
+    types_label_list =[]
+    count_label_list = []
+    for i in range(len(labellist)):
+        if(labellist[i] not in types_label_list):
+            types_label_list.append(labellist[i])
+            count_label_list.append(1)
+        else:
+            count_label_list[types_label_list.index(labellist[i])]+=1
+
+    print('types_label :', types_label_list)
+    print('count_label :', count_label_list)   
+    print('sum of # episodes:', sum(count_label_list))
+                
+    return types_label_list, count_label_list
+
