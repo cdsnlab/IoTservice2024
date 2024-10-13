@@ -188,3 +188,20 @@ def padding_by_mean(lengthlist, normalized_df):
     # convert to tensor    
     datalist = torch.stack(datalist)    
     return datalist
+
+def reconstrct_list(length_list, normalized_df):
+    
+    # reconstruction of datalist    
+    data_list=[]
+    reconst_list =[]
+    count_lengthlist = 0
+
+    # for each row
+    for i in range(len(length_list)):
+        reconst_list =[]    
+        # append by each length
+        for j in range(count_lengthlist,(count_lengthlist+length_list[i])):
+            reconst_list.append(normalized_df.iloc[j,:].tolist())            
+        count_lengthlist += length_list[i]
+        data_list.append(torch.tensor(reconst_list))
+    return data_list
