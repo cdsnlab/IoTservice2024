@@ -512,3 +512,13 @@ def delete_label(data_list, label_list, deleted_label):
     label_list = sort_only_label(label_list)
 
     return data_list, label_list
+
+def change_label(label_list, deleted_label):
+
+    for i in range(len(label_list)): 
+        if label_list[i] == (deleted_label-1):
+            label_list[i] = 100000
+    
+    sort_only_label(label_list)
+
+    return label_list
