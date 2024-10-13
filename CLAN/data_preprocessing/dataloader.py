@@ -205,3 +205,20 @@ def reconstrct_list(length_list, normalized_df):
         count_lengthlist += length_list[i]
         data_list.append(torch.tensor(reconst_list))
     return data_list
+
+def data_augmentation(dataset_list, aug_method, aug_wise):
+    # Data Augmentation Module
+    print('-' * 100)
+    print(('*'*5)+'Augmentation Starting'+('*'*5))
+    
+    # For give the same number of data size (balancing the numbers)
+    types_label_list, count_label_list = count_label(dataset_list)
+    max_label_count = max(count_label_list)
+
+    # calculating the numbers that need to be augmented
+    sub_count_label = [0] * len(types_label_list)
+    for i in range(len(types_label_list)):
+        sub_count_label[i] = max_label_count - count_label_list[i]
+    print("The amount of augmented data:", sub_count_label)
+    
+    copy_count_label = sub_count_label.copy()
