@@ -162,3 +162,29 @@ def padding_by_max(lengthlist, normalized_df):
     # convert to tensor    
     datalist = torch.stack(datalist)
     return datalist
+
+def padding_by_mean(lengthlist, normalized_df):
+    # reconstruction of datalist    
+    datalist=[]
+    reconst_list =[]
+    count_lengthlist = 0
+    mean_length = int(sum(lengthlist)/len(lengthlist))
+    print("mean padding (length):", mean_length)
+    for i in range(len(lengthlist)):
+        reconst_list =[]    
+        # cut df by each length
+        if(lengthlist[i]>= mean_length): # length is larger than mean
+            for j in range(count_lengthlist, count_lengthlist+mean_length):
+                reconst_list.append(normalized_df.iloc[j,:].tolist())
+            datalist.append(torch.tensor(reconst_list))
+        else: # length is smaller than mean
+            for j in range(count_lengthlist, (count_lengthlist+lengthlist[i])):
+                reconst_list.append(normalized_df.iloc[j,:].tolist())
+            # padding to the end 
+            p2d = (0, 0, 0, mean_length-lengthlist[i])
+            datalist.append(F.pad(torch.tensor(reconst_list),p2d,"constant", 0))    
+        count_lengthlist += lengthlist[i]
+    
+    # convert to tensor    
+    datalist = torch.stack(datalist)    
+    return datalist
