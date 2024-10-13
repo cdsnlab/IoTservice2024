@@ -603,3 +603,13 @@ def loading_data(dataset, args):
         #print('tensor_shape', datalist.size())
     else:
         datalist = reconstrct_list(length_list, normalized_df)
+
+    
+    print('-' * 100)
+    print(('*'*5)+'After padding'+('*'*5))
+    
+    #to make label 0~
+    labellist = (np.array(label_list)-1).tolist()
+    count_label_labellist(labellist)    
+    
+    return  types_label_list, datalist.cuda(), labellist
