@@ -463,3 +463,38 @@ def data_augmentation(dataset_list, aug_method, aug_wise):
                 aug = trans.augment(np.reshape(target_data,(1, target_data.shape[0], -1))) 
                 ts_ds = TSDataSet(aug[0], dataset_list[i].label, len(aug[0]), dataset_list[i].user_id)
                 dataset_list.append(ts_ds)
+
+# a method to create continuous labels from 0 due to data process
+def sort_data_label(dataset_list):
+    # change labels
+    types_label_list, _ = count_label(dataset_list)
+
+    types_label_list.sort()
+    changed_label_list =[i for i in range(1, len(types_label_list)+1)]
+
+    print("original label:", types_label_list, "\nchanged label:", changed_label_list)    
+        
+    for i in range(len(dataset_list)): 
+        dataset_list[i].label = changed_label_list[types_label_list.index(dataset_list[i].label)]
+
+    return dataset_list 
+
+def sort_only_label(label_list):
+    # change labels
+    
+    # find types of labels
+    types_label_list =[]
+
+    for i in range(len(label_list)):
+        if(label_list[i] not in types_label_list):
+            types_label_list.append(label_list[i])
+
+    types_label_list.sort()
+    changed_label_list =[i for i in range(0, len(types_label_list))]
+
+    print("original label:", types_label_list, "\nchanged label:", changed_label_list)    
+        
+    for i in range(len(label_list)): 
+        label_list[i] = changed_label_list[types_label_list.index(label_list[i])]
+
+    return label_list 
