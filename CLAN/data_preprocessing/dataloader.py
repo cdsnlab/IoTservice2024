@@ -549,3 +549,23 @@ def loading_data(dataset, args):
         dataset_list =  openpackLoader('data/OpenPack/*.csv', timespan, min_seq)
     elif dataset == 'pamap':
         dataset_list =  pamapLoader('data/PAMAP2/*dat', timespan, min_seq)
+
+    # select datalist by min_samples
+    types_label_list, count_label_list = count_label(dataset_list)
+    types_label_list = [label for label in types_label_list if (count_label_list[types_label_list.index(label)] >= min_samples) ]
+    print('-' * 100)
+    print(('*'*5)+'Remining data labels: ', types_label_list)
+    dataset_list = [ele for ele in dataset_list if (ele.label in types_label_list)]
+    
+    print('-' * 100)
+    print(('*'*5)+'Changed data labels'+('*'*5))
+    # create labels continuously
+    dataset_list = sort_data_label(dataset_list)
+    
+    # For data augmentation calculating necessary augmented 
+    if aug_wise is not None:
+        dataset_list = data_augmentation(dataset_list, aug_method, aug_wise)
+    
+    print('-' * 100)
+    print(('*'*5)+'Before padding'+('*'*5))
+    types_label_list, count_label_list = count_label(dataset_list)
