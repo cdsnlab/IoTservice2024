@@ -44,3 +44,20 @@ def visualization_roc(class_num, y_onehot_test, y_score, vis_title, vis_path, po
     plt.legend()
     plt.show()
     plt.savefig(vis_path)
+
+def print_rs(final_1, final_2, final_3, final_4, final_5, save_path):
+     # for extrating results to an excel file
+    final_rs =[]
+    for i in final_1:
+        final_rs.append(i)
+    for i in final_2:
+        final_rs.append(i)
+    for i in final_3:
+        final_rs.append(i)
+    for i in final_4:
+        final_rs.append(i)
+    for i in final_5:
+        final_rs.append(i)
+        
+    df = pd.DataFrame(final_rs, columns=['mean', 'std'])
+    df.to_excel(save_path, sheet_name='the results')
