@@ -70,5 +70,50 @@ class TimeseriesDataset(Dataset):
     def __getsize__(self):
         return (self.__len__())
 
+def visualization_data(dataset_list, file_name, activity_num):
+    print("Visualizing Dataset --------------------------------------")
+    label_count = [0 for x in range(activity_num)]
+    # for visualization
+    for k in range(len(dataset_list)):
+        visual_df = pd.DataFrame(dataset_list[k].data)
 
+        fig, ax = plt.subplots(figsize=(10, 6))
+        axb = ax.twinx()
+
+        ax.set_xlabel('Time')
+        ax.set_ylabel('Value')
+        ax.grid(True)
+
+        # Plotting on the first y-axis
+        for i in range(len(dataset_list[0].data[0])):
+            ax.plot(visual_df[i], label = str(i+1))
+
+        ax.legend(loc='upper left')
+        
+        plt.savefig(file_name+'visualization/'+str(dataset_list[k].label)+'_'+str(label_count[dataset_list[k].label-1])+'.png')
+        plt.close(fig)
+        label_count[dataset_list[k].label-1]+=1
+
+    print("Visualizing Dataset Finished--------------------------------------")
+
+
+
+# A method finds types of labels and counts the number of each label
+def count_label(dataset_list):
+    # find types and counts of labels
+    types_label_list = []
+    count_label_list = []
+
+    for i in range(len(dataset_list)):
+        if(dataset_list[i].label not in types_label_list):
+            types_label_list.append(dataset_list[i].label)
+            count_label_list.append(1)
+        else:
+            count_label_list[types_label_list.index(dataset_list[i].label)]+=1
+
+    print('types_label :', types_label_list)
+    print('count_label :', count_label_list) 
+    print('sum of # episodes:', sum(count_label_list))  
+                
+    return types_label_list, count_label_list
 
