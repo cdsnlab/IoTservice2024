@@ -50,9 +50,9 @@ If you don't want to pre-train, you can just copy and paste the [dataset_name]_m
 ## Experiment
 
 You can run most of the experiments in our paper by  
-> $ chmod +x exp_deyo.sh  
-> $ ./exp_deyo.sh  
+> $ chmod +x exp_fata.sh  
+> $ ./exp_fata.sh  
 
-If you want to run on the ImageNet-R or VISDA-2021, you should use main_da.py
+If you want to run on the ImageNet-R or VISDA-2021, you should use main.py
 
-You should modify ROOT variable as [data_root] in exp_deyo.sh.  
+You should modify ROOT variable as [data_root] in exp_fata.sh.  
