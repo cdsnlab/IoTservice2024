@@ -284,3 +284,35 @@ def run_sar(args, net, logger, aug=False):
         adapt_model = sar_aug.SARAug(net, optimizer, margin_e0=args.sar_margin_e0)
 
     return adapt_model
+
+
+def run_deyo(args, net, logger):
+    net = deyo.configure_model(net)
+    params, param_names = deyo.collect_params(net)
+
+    optimizer = torch.optim.SGD(params, args.lr, momentum=0.9)
+    adapt_model = deyo.DeYO(
+        net,
+        args,
+        optimizer,
+        deyo_margin=args.deyo_margin,
+        margin_e0=args.deyo_margin_e0,
+    )
+
+    return adapt_model
+
+
+def run_deyo_aug(args, net, logger):
+    net = deyo_aug.configure_model(net)
+    params, param_names = deyo_aug.collect_params(net)
+
+    optimizer = torch.optim.SGD(params, args.lr, momentum=0.9)
+    adapt_model = deyo_aug.DeYOAug(
+        net,
+        args,
+        optimizer,
+        deyo_margin=args.deyo_margin,
+        margin_e0=args.deyo_margin_e0,
+    )
+
+    return adapt_model
