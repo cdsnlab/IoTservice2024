@@ -129,3 +129,35 @@ def eval_waterbirds(net, val_loader, epoch_cnt):
         "Acc at epoch {}: {:.2f}%".format(epoch_cnt, correct_count / total_count * 100)
     )
     return 0
+
+
+def test_waterbirds(net, test_loader, epoch_cnt):
+    correct_count = [0, 0, 0, 0]
+    total_count = [0, 0, 0, 0]
+    for labeled_batch in test_loader:
+        data = labeled_batch
+        x, y = data[0], data[1]
+        place = data[2]["place"]
+        x = x.cuda()
+        y = y.cuda()
+        place = place.cuda()
+
+        logits = net(x)
+
+        group = 2 * y + place  # 0: land+land, 1: land+sea, 2: sea+land, 3: sea+sea
+        TFtensor = logits.argmax(dim=1) == y
+
+        for group_idx in range(4):
+            correct_count[group_idx] += TFtensor[group == group_idx].sum().item()
+            total_count[group_idx] += len(TFtensor[group == group_idx])
+
+    print(
+        "Acc at epoch {}: LL: {:.2f}%, LS: {:.2f}%, SL: {:.2f}%, SS: {:.2f}%,".format(
+            epoch_cnt,
+            correct_count[0] / total_count[0] * 100,
+            correct_count[1] / total_count[1] * 100,
+            correct_count[2] / total_count[2] * 100,
+            correct_count[3] / total_count[3] * 100,
+        )
+    )
+    return 0
