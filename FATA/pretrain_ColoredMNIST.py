@@ -106,3 +106,89 @@ def erm_train(model, device, train_loader, optimizer, epoch, args):
         loss.backward()
         optimizer.step()
     print("Train Epoch: {}\tLoss: {:.6f}".format(epoch, loss.item()))
+
+
+def train_and_test_erm(model, args):
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+
+    kwargs = {"num_workers": args.workers, "pin_memory": True} if use_cuda else {}
+    all_train_loader = torch.utils.data.DataLoader(
+        ColoredMNIST(
+            root=args.root_dir,
+            env="all_train",  # flip=True,
+            transform=transforms.Compose(
+                [
+                    transforms.ToTensor(),
+                    transforms.Normalize(
+                        (0.1307, 0.1307, 0.0), (0.3081, 0.3081, 0.3081)
+                    ),
+                ]
+            ),
+        ),
+        batch_size=args.batch_size,
+        shuffle=args.if_shuffle,
+        **kwargs,
+    )
+
+    test_loader = torch.utils.data.DataLoader(
+        ColoredMNIST(
+            root=args.root_dir,
+            env="test",  # flip=True,
+            transform=transforms.Compose(
+                [
+                    transforms.ToTensor(),
+                    transforms.Normalize(
+                        (0.1307, 0.1307, 0.0), (0.3081, 0.3081, 0.3081)
+                    ),
+                ]
+            ),
+        ),
+        batch_size=args.test_batch_size,
+        shuffle=False,
+        **kwargs,
+    )
+
+    if not os.path.exists(os.path.join(args.root_dir, "ColoredMNIST_model.pickle")):
+        model = model.to(device)
+        optimizer = torch.optim.SGD(
+            model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0001
+        )
+
+        for epoch in range(args.max_epochs):
+            erm_train(model, device, all_train_loader, optimizer, epoch, args)
+            if epoch % args.interval == 0 or epoch == args.max_epochs - 1:
+                test_model(model, device, all_train_loader, set_name="train set")
+                test_model(model, device, test_loader)
+
+
+if __name__ == "__main__":
+    assert args.root_dir is not None
+    assert args.dset_dir is not None
+
+    args.root_dir = os.path.join(args.root_dir, args.dset_dir)
+
+    SEED = args.seed
+    deterministic = True
+
+    random.seed(SEED)
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+    torch.cuda.manual_seed_all(SEED)
+    if deterministic:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+    model = torchvision.models.resnet18(pretrained=True)
+    num_classes = 2
+    model.fc = nn.Linear(model.fc.in_features, num_classes, bias=True)
+    model.eval()
+    train_and_test_erm(model, args)
+
+    if not os.path.exists(os.path.join(args.root_dir, "ColoredMNIST_model.pickle")):
+        with open(
+            file=os.path.join(args.root_dir, "ColoredMNIST_model.pickle"), mode="wb"
+        ) as f:
+            pickle.dump(model, f)
+    else:
+        print("Pretrained model already exists.")
