@@ -63,3 +63,50 @@ def download_dataset(root_dir):
         wget.download(url, out=root_dir)
     else:
         print(filename, "already exists")
+
+
+def make_dataset(dset_dir):
+    print("Dataset path:", dset_dir)
+    meta_path = os.path.join(dset_dir, "metadata.csv")
+    print("Metadata path:", meta_path)
+
+    hdf5_file = os.path.join(dset_dir, "waterbirds_dataset.h5py")
+
+    split_cnt = [-1, -1, -1]
+
+    with h5py.File(hdf5_file, "w") as hf:
+        f = open(meta_path, "r")
+        rdr = csv.reader(f)
+        cnt = 0
+        for line in tqdm(rdr):
+            # skip line 1
+            if cnt == 0:
+                cnt += 1
+                continue
+
+            file_path = os.path.join(dset_dir, line[1])
+            x = Image.open(file_path).convert("RGB")
+            x = x.resize((224, 224))
+            split_val = int(line[3])
+            if split_val == 0:
+                split = "train"
+            elif split_val == 1:
+                split = "val"
+            elif split_val == 2:
+                split = "test"
+            else:
+                raise Exception("Not accurate split")
+
+            split_cnt[split_val] += 1
+
+            h5py_path = os.path.join("Waterbirds", split, str(split_cnt[split_val]))
+            hf[h5py_path] = x
+            hf[h5py_path].attrs["img_id"] = int(line[0])
+            hf[h5py_path].attrs["img_filename"] = line[1]
+            hf[h5py_path].attrs["y"] = int(line[2])
+            hf[h5py_path].attrs["split"] = split_val
+            hf[h5py_path].attrs["place"] = int(line[4])
+            hf[h5py_path].attrs["place_filename"] = line[5]
+
+            cnt += 1
+        f.close()
