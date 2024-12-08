@@ -161,3 +161,11 @@ def def_run_deyox(module_name):
         return adapt_model
 
     return _run_deyo_aug
+
+
+def run_tentb(args, net, logger):
+    net = tentb.configure_model(net)
+    params, param_names = tentb.collect_params(net)
+    optimizer = torch.optim.SGD(params, args.lr, momentum=0.9)
+    tented_model = tentb.TentB(net, optimizer)
+    return tented_model
