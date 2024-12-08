@@ -269,3 +269,18 @@ def run_eata(args, net, logger, aug=False):
         )
 
     return adapt_model
+
+
+def run_sar(args, net, logger, aug=False):
+    net = sar.configure_model(net)
+    params, param_names = sar.collect_params(net)
+
+    base_optimizer = torch.optim.SGD
+    optimizer = sam.SAM(params, base_optimizer, lr=args.lr, momentum=0.9)
+
+    if not aug:
+        adapt_model = sar.SAR(net, optimizer, margin_e0=args.sar_margin_e0)
+    else:
+        adapt_model = sar_aug.SARAug(net, optimizer, margin_e0=args.sar_margin_e0)
+
+    return adapt_model
