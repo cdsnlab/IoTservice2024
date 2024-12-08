@@ -46,3 +46,13 @@ data_root
 └── └── ...
 ```
 If you don't want to pre-train, you can just copy and paste the [dataset_name]_model.pickle from './pretrained/' directory.
+
+## Experiment
+
+You can run most of the experiments in our paper by  
+> $ chmod +x exp_deyo.sh  
+> $ ./exp_deyo.sh  
+
+If you want to run on the ImageNet-R or VISDA-2021, you should use main_da.py
+
+You should modify ROOT variable as [data_root] in exp_deyo.sh.  
