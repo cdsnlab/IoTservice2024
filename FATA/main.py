@@ -316,3 +316,239 @@ def run_deyo_aug(args, net, logger):
     )
 
     return adapt_model
+
+
+def main(args):
+    args.data = args.datasets["ImageNet"]
+    args.data_corruption = os.path.join(args.datasets[args.dset].path, args.dset)
+    args.output = os.path.join(args.output, args.method, args.exp_type, args.exp_name)
+
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+
+    if args.dset == "ImageNet-C":
+        args.num_class = 1000
+    else:
+        raise NotImplementedError("dset not implemented")
+    print("The number of classes:", args.num_class)
+
+    now = datetime.now()
+    date_time = now.strftime("%m-%d-%H-%M-%S")
+
+    total_top1 = AverageMeter("Acc@1", ":6.2f")
+    total_top5 = AverageMeter("Acc@5", ":6.2f")
+
+    if args.seed is not None:
+        random.seed(args.seed)
+        np.random.seed(args.seed)
+        torch.manual_seed(args.seed)
+
+    if not os.path.exists(args.output):
+        os.makedirs(args.output, exist_ok=True)
+
+    args.logger_name = time.strftime(
+        "%Y-%m-%d-%H-%M-%S", time.localtime()
+    ) + "-{}-{}-level{}-seed{}.txt".format(
+        args.method, args.model, args.level, args.seed
+    )
+    logger = get_logger(
+        name="project",
+        output_directory=args.output,
+        log_name=args.logger_name,
+        debug=False,
+    )
+    args.logger = logger
+
+    common_corruptions = [
+        "gaussian_noise",
+        "shot_noise",
+        "impulse_noise",
+        "defocus_blur",
+        "glass_blur",
+        "motion_blur",
+        "zoom_blur",
+        "snow",
+        "frost",
+        "fog",
+        "brightness",
+        "contrast",
+        "elastic_transform",
+        "pixelate",
+        "jpeg_compression",
+    ]
+
+    if args.exp_type == "mix_shifts" and args.dset == "ImageNet-C":
+        datasets = []
+        for cpt in common_corruptions:
+            args.corruption = cpt
+            logger.info(args.corruption)
+
+            val_dataset, _ = prepare_test_data(args)
+            val_dataset.switch_mode(True, False)
+            datasets.append(val_dataset)
+
+        from torch.utils.data import ConcatDataset
+
+        mixed_dataset = ConcatDataset(datasets)
+        logger.info(f"length of mixed dataset us {len(mixed_dataset)}")
+        val_loader = torch.utils.data.DataLoader(
+            mixed_dataset,
+            batch_size=args.test_batch_size,
+            shuffle=args.if_shuffle,
+            num_workers=args.workers,
+            pin_memory=True,
+        )
+        common_corruptions = ["mix_shifts"]
+    elif args.exp_type == "bs1":
+        args.test_batch_size = 1
+        logger.info("modify batch size to 1, for exp of single sample adaptation")
+    elif args.exp_type == "label_shifts":
+        args.if_shuffle = False
+        logger.info(
+            "this exp is for label shifts, no need to shuffle the dataloader, use our pre-defined sample order"
+        )
+
+    rn_method = args.method
+    rn_dict = {"lrmul": args.lr_mul, "seed": args.seed}
+    if args.method == "eata" and (args.eata_fishers == 0 or args.fisher_alpha == 0):
+        rn_method = "eta"
+    elif args.method.startswith("deyo"):
+        rn_dict.update(
+            {
+                "ethr": args.deyo_margin,
+                "dthr": args.plpd_threshold,
+                "emar": args.deyo_margin_e0,
+            }
+        )
+
+    if args.continual:
+        rn_dict.update({"continual": 1})
+
+    if args.wandb_log:
+        wandb.init(
+            project=f"{args.dset}_lv{args.level}_{args.model}_{args.exp_type}",
+            tags=["ideation"],
+            config=args,
+        )
+        wandb.run.name = f"{args.exp_name}/{rn_method}"
+        wandb.define_metric("iter")
+        wandb.define_metric("accuracy", step_metric="iter")
+
+    args.e_margin *= math.log(args.num_class)
+    args.sar_margin_e0 *= math.log(args.num_class)
+    args.deyo_margin *= math.log(args.num_class)
+    args.deyo_margin_e0 *= math.log(args.num_class)
+
+    ir = args.imbalance_ratio
+    for corrupt_i, corrupt in enumerate(tqdm(common_corruptions)):
+        logger.info(f"corruption: {corrupt} ({corrupt_i}/{len(common_corruptions)})")
+        args.corruption = corrupt
+        bs = args.test_batch_size
+        args.print_freq = 50000 // 20 // bs
+
+        if args.corruption != "mix_shifts":
+            if args.dset == "ImageNet-C":
+                val_dataset, val_loader = prepare_test_data(args)
+                val_dataset.switch_mode(True, False)
+
+        if args.exp_type == "label_shifts":
+            logger.info(f"imbalance ratio is {ir}")
+            if args.seed == 2021:
+                indices_path = (
+                    "./dataset/total_{}_ir_{}_class_order_shuffle_yes.npy".format(
+                        100000, ir
+                    )
+                )
+            else:
+                indices_path = "./dataset/seed{}_total_{}_ir_{}_class_order_shuffle_yes.npy".format(
+                    args.seed, 100000, ir
+                )
+            logger.info(f"label_shifts_indices_path is {indices_path}")
+            indices = np.load(indices_path)
+            val_dataset.set_specific_subset(indices.astype(int).tolist())
+
+        if args.model == "resnet50_gn_timm":
+            net = timm.create_model("resnet50_gn", pretrained=True)
+            args.lr = (0.00025 / 64) * bs * 2 if bs < 32 else 0.00025
+        elif args.model == "vitbase_timm":
+            net = timm.create_model("vit_base_patch16_224", pretrained=True)
+            args.lr = (0.001 / 64) * bs
+        elif args.model == "resnet50_bn_torch":
+            net = Resnet.__dict__["resnet50"](pretrained=True)
+            args.lr = (0.00025 / 64) * bs * 2 if bs < 32 else 0.00025
+            args.lr *= args.lr_mul
+        elif args.model == "resnet18_bn":
+            args.lr = (0.00025 / 64) * bs * 2 if bs < 32 else 0.00025
+            args.lr *= args.lr_mul
+        else:
+            assert False, NotImplementedError
+
+        if args.exp_type == "bs1":
+            if args.method == "sar":
+                args.lr = 2 * args.lr
+                logger.info("double lr for sar under bs=1")
+            elif args.method == "deyo":
+                args.lr = 2 * args.lr
+                logger.info("double lr for DeYO under bs=1")
+
+        net = net.cuda()
+
+        logger.info(args.method)
+
+        if args.method == "tent":
+            adapt_model = run_tent(args, net, logger)
+
+        elif args.method == "tentb":
+            adapt_model = run_tentb(args, net, logger)
+
+        elif args.method == "stent":
+            adapt_model = run_stent(args, net, logger)
+
+        elif args.method == "ot":
+            adapt_model = run_otent(args, net, logger)
+
+        elif args.method == "no_adapt":
+            adapt_model = net
+
+        elif args.method == "bn":
+            adapt_model = tent.configure_model(net)
+
+        elif args.method == "eata":
+            adapt_model = run_eata(args, net, logger)
+        elif args.method == "eata_aug":
+            adapt_model = run_eata(args, net, logger, aug=True)
+
+        elif args.method in ["sar"]:
+            adapt_model = run_sar(args, net, logger)
+
+        elif args.method in ["sar_aug"]:
+            adapt_model = run_sar(args, net, logger, aug=True)
+
+        elif args.method in ["deyo"]:
+            adapt_model = run_deyo(args, net, logger)
+        elif args.method in ["deyo_aug"] or args.method.startswith("deyo_"):
+            adapt_model = def_run_deyox(args.method)(args, net, logger)
+
+        elif args.method.startswith("tent"):
+            adapt_model = def_run_tentx(args.method)(args, net, logger)
+
+        else:
+            assert False, NotImplementedError
+
+        adapt_model = adapt_model.cuda()
+        acc1, acc5 = validate(val_loader, adapt_model, args)
+
+        total_top1.update(acc1, 1)
+        total_top5.update(acc5, 1)
+
+    logger.info(f"The average of top1 accuracy is {total_top1.avg}")
+    logger.info(f"The average of top5 accuracy is {total_top5.avg}")
+    if args.wandb_log:
+        wandb.log({"final_avg/top1": total_top1.avg, "final_avg/top5": total_top5.avg})
+
+        wandb.finish()
+
+
+if __name__ == "__main__":
+    opts = get_opts()
+    main(opts)
