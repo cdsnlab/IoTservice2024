@@ -152,3 +152,49 @@ def extract_fts(net, loader, prefix="imagenet_val"):
         },
         f"/ssd1/tta/{prefix}_resnet50_bn_INC0-5.pth",
     )
+
+
+def main():
+    def get_net(bn=False):
+        net = Resnet.__dict__["resnet50"](pretrained=True)
+        net = net.cuda()
+        net.layer1.register_forward_hook(layer_hook)
+        net.layer2.register_forward_hook(layer_hook)
+        net.layer3.register_forward_hook(layer_hook)
+        net.layer4.register_forward_hook(layer_hook)
+
+        if bn:
+            for m in net.modules():
+                if isinstance(m, nn.BatchNorm2d):
+                    # force use of batch stats in train and eval modes
+                    m.track_running_stats = False
+                    m.running_mean = None
+                    m.running_var = None
+
+        net.eval()
+        return net
+
+    # dataset = ImageFolder('/ssd1/datasets/ImageNet/val', transform=transform)
+    transform = T.Compose(
+        [
+            T.Resize(256),
+            T.CenterCrop(224),
+            T.ToTensor(),
+            T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
+
+    # net1 = get_net()
+    net = get_net(bn=True)
+    loader = DataLoader(
+        PairedINC(transform, "gaussian_noise", (1, 2, 3, 4, 5)),
+        batch_size=256,
+        shuffle=True,
+        num_workers=16,
+    )
+    extract_fts(net, loader, "inc_all")
+
+
+if __name__ == "__main__":
+    with torch.no_grad():
+        main()
