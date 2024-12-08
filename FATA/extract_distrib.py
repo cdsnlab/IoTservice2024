@@ -68,3 +68,21 @@ def extract_clsft(net, loader):
 
     torch.save(results, "/ssd1/tta/imagenet_val_resnet50_clsfts.pth")
     print(f"{fts[0].shape=}")
+
+
+def extract_lyrft(net, loader):
+    net.eval()
+
+    target_layers = [net.layer1, net.layer2, net.layer3, net.layer4]
+    fts = [[] for _ in target_layers]
+    for i, (x, _) in enumerate(tqdm(loader)):
+        x = x.cuda()
+        x = net(x)
+
+        for j, layer in enumerate(target_layers):
+            fts[j].append(layer._style_mean.cpu())
+
+    results = [torch.concat(f) for f in fts]
+    print([f.shape for f in results])
+
+    torch.save(results, "/ssd1/tta/imagenet_val_resnet50_lyrfts.pth")
