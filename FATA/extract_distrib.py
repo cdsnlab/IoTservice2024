@@ -50,3 +50,21 @@ def extract(net, loader):
     torch.save(l4, "/ssd1/tta/imagenet_val_resnet50_l4.pth")
     torch.save(e1k, "/ssd1/tta/imagenet_val_resnet50_e1k.pth")
     torch.save(pred, "/ssd1/tta/imagenet_val_resnet50_pred.pth")
+
+
+def extract_clsft(net, loader):
+    net.eval()
+
+    fts = {i: [] for i in range(1000)}
+    for i, (x, y) in enumerate(tqdm(loader)):
+        x = x.cuda()
+
+        ft = net(x, return_feature=True, return_feature_only=True)
+
+        for f, t in zip(ft, y):
+            fts[t.item()].append(f.detach().cpu())
+
+    results = {k: torch.concat(v) for k, v in fts.items()}
+
+    torch.save(results, "/ssd1/tta/imagenet_val_resnet50_clsfts.pth")
+    print(f"{fts[0].shape=}")
