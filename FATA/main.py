@@ -177,3 +177,13 @@ def run_stent(args, net, logger):
     optimizer = torch.optim.SGD(params, args.lr, momentum=0.9)
     tented_model = stent.STent(net)
     return tented_model
+
+
+def run_otent(args, net, logger):
+    src_l1ft = torch.load("/ssd1/tta/imagenet_val_resnet50_lyrfts.pth")
+
+    net = ot.configure_model(net)
+    params, param_names = ot.collect_params(net)
+    optimizer = torch.optim.SGD(params, args.lr, momentum=0.9)
+    tented_model = ot.OTent(net, optimizer, src_l1ft)
+    return tented_model
