@@ -1,4 +1,4 @@
-name: fata
+name: deyo
 channels:
   - pytorch
   - conda-forge
@@ -101,3 +101,4 @@ dependencies:
     - wget==3.2
     - wilds==2.0.0
     - zipp==3.17.0
+prefix: /home/jlee9696/anaconda3/envs/deyo
