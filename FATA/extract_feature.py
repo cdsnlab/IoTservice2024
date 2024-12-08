@@ -31,3 +31,29 @@ def extract(net, loader):
     l3 = torch.concat(l3)
 
     torch.save(l3, "/ssd1/tta/inc_val_resnet50_l3.pth")
+
+
+def main():
+    net = Resnet.__dict__["resnet50"](pretrained=True)
+    net = net.cuda()
+
+    normalize = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+    transform = T.Compose(
+        [
+            T.Resize(256),
+            T.CenterCrop(224),
+            T.ToTensor(),
+            normalize,
+        ]
+    )
+
+    dataset = ImageFolder("/ssd1/datasets/ImageNet/val", transform=transform)
+    loader = DataLoader(dataset, batch_size=100, shuffle=False, num_workers=16)
+
+    extract(net, loader)
+
+
+if __name__ == "__main__":
+    with torch.no_grad():
+        main()
