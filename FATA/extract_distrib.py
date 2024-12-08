@@ -45,7 +45,7 @@ def extract(net, loader):
     e1k = torch.concat(e1k)
     pred = torch.concat(pred)
 
-    print(f"{l4.shape=}, {e1k.shape=}, {pred.shape=}")
+    # print(f"{l4.shape=}, {e1k.shape=}, {pred.shape=}")
 
     torch.save(l4, "/ssd1/tta/imagenet_val_resnet50_l4.pth")
     torch.save(e1k, "/ssd1/tta/imagenet_val_resnet50_e1k.pth")
