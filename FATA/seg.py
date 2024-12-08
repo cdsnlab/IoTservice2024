@@ -176,3 +176,28 @@ def main(opts: Dict[str, any]):
             'iter': cur_iter
         }, commit=True)
             
+def _main():
+    main(EasyDict({
+            'adapt': True,
+            'exp_name': 'tent_aug.2',
+            'crop_size': 768,
+            'batch_size': 1,
+            'rounds': 1,
+            'data_order': 'fnrs',
+            'BB': 'RN50',
+            'model': 'deeplabv3plus_resnet50',
+            'pretrained': '/ssd1/rangewing/best_deeplabv3plus_resnet50_cityscapes.pth',
+            'random_seed': 1,
+            'datasets' : {
+                'ACDC' : {
+                    'path': '/ssd1/datasets/ACDC'
+                },
+                'cityscapes_c': {
+                    'path': '/ssd1/datasets/cityscapes-c/'
+                }
+            }
+        }))
+
+
+if __name__ == '__main__':
+    _main()
