@@ -169,3 +169,11 @@ def run_tentb(args, net, logger):
     optimizer = torch.optim.SGD(params, args.lr, momentum=0.9)
     tented_model = tentb.TentB(net, optimizer)
     return tented_model
+
+
+def run_stent(args, net, logger):
+    net = stent.configure_model(net)
+    params, param_names = stent.collect_params(net)
+    optimizer = torch.optim.SGD(params, args.lr, momentum=0.9)
+    tented_model = stent.STent(net)
+    return tented_model
