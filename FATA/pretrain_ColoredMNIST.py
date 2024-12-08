@@ -93,3 +93,16 @@ def test_model(model, device, test_loader, set_name="test set"):
     )
 
     return correct_count, total_count
+
+
+def erm_train(model, device, train_loader, optimizer, epoch, args):
+    model.train()
+    CELoss = torch.nn.CrossEntropyLoss()
+    for batch_idx, (data, target, group) in enumerate(train_loader):
+        data, target, group = data.to(device), target.to(device), group.to(device)
+        optimizer.zero_grad()
+        output = model(data)
+        loss = CELoss(output, target)
+        loss.backward()
+        optimizer.step()
+    print("Train Epoch: {}\tLoss: {:.6f}".format(epoch, loss.item()))
