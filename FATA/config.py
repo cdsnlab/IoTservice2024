@@ -127,20 +127,20 @@ def get_argparser():
         help="imbalance ratio for label shift exps, selected from [1, 1000, 2000, 3000, 4000, 5000, 500000], 1  denotes totally uniform and 500000 denotes (almost the same to Pure Class Order).",
     )
 
-    # DeYO parameters
+    # FATA parameters
     parser.add_argument("--aug_type", default=None, type=str, help="patch, pixel, occ")
     parser.add_argument("--occlusion_size", default=None, type=int)
     parser.add_argument("--row_start", default=None, type=int)
     parser.add_argument("--column_start", default=None, type=int)
 
     parser.add_argument(
-        "--deyo_margin",
+        "--fata_margin",
         default=None,
         type=float,
         help="Entropy threshold for sample selection $\tau_\mathrm{Ent}$ in Eqn. (8)",
     )
     parser.add_argument(
-        "--deyo_margin_e0",
+        "--fata_margin_e0",
         default=None,
         type=float,
         help="Entropy margin for sample weighting $\mathrm{Ent}_0$ in Eqn. (10)",
