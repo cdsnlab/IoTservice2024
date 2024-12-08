@@ -187,3 +187,85 @@ def run_otent(args, net, logger):
     optimizer = torch.optim.SGD(params, args.lr, momentum=0.9)
     tented_model = ot.OTent(net, optimizer, src_l1ft)
     return tented_model
+
+
+def run_eata(args, net, logger, aug=False):
+    net_ewc = Resnet.__dict__["resnet50"](pretrained=True)
+    net_ewc = net_ewc.cuda()
+
+    net_ewc = eata.configure_model(net_ewc)
+    params, param_names = eata.collect_params(net_ewc)
+    ewc_optimizer = torch.optim.SGD(params, 0.001)
+    fishers = {}
+
+    corruption = args.corruption
+    if args.eata_fishers:
+        print("EATA!")
+        args.corruption = "original"
+
+        fisher_dataset, fisher_loader = prepare_test_data(args)
+        fisher_dataset.set_dataset_size(args.fisher_size)
+        fisher_dataset.switch_mode(True, False)
+
+        net = eata.configure_model(net)
+        params, param_names = eata.collect_params(net)
+        ewc_optimizer = torch.optim.SGD(params, 0.001)
+        fishers = {}
+        train_loss_fn = nn.CrossEntropyLoss().cuda()
+        for iter_, data in enumerate(fisher_loader, start=1):
+            images, targets = data[0], data[1]
+            if args.gpu is not None:
+                images = images.cuda(non_blocking=True)
+            if torch.cuda.is_available():
+                targets = targets.cuda(non_blocking=True)
+            outputs = net(images)
+            if aug:
+                outputs = outputs
+            _, targets = outputs.max(1)
+            loss = train_loss_fn(outputs, targets)
+            loss.backward()
+            for name, param in net.named_parameters():
+                if param.grad is not None:
+                    if iter_ > 1:
+                        fisher = (
+                            param.grad.data.clone().detach() ** 2 + fishers[name][0]
+                        )
+                    else:
+                        fisher = param.grad.data.clone().detach() ** 2
+                    if iter_ == len(fisher_loader):
+                        fisher = fisher / iter_
+                    fishers.update({name: [fisher, param.data.clone().detach()]})
+            ewc_optimizer.zero_grad()
+        logger.info("compute fisher matrices finished")
+        del ewc_optimizer
+    else:
+        net = eata.configure_model(net)
+        params, param_names = eata.collect_params(net)
+        print("ETA!")
+        fishers = None
+
+    args.corruption = corruption
+    optimizer = torch.optim.SGD(params, args.lr, momentum=0.9)
+
+    if not aug:
+        adapt_model = eata.EATA(
+            args,
+            net,
+            optimizer,
+            fishers,
+            args.fisher_alpha,
+            e_margin=args.e_margin,
+            d_margin=args.d_margin,
+        )
+    else:
+        adapt_model = eata_aug.EATAAug(
+            args,
+            net,
+            optimizer,
+            fishers,
+            args.fisher_alpha,
+            e_margin=args.e_margin,
+            d_margin=args.d_margin,
+        )
+
+    return adapt_model
