@@ -13,3 +13,36 @@ by Jonghyun Lee, Dahuin Jung, Saehyung Lee, Junsung Park, Juhyeon Shin, Uiwon Hw
 You should modify [username] and [env_name] in environment.yaml, then  
 > $ conda env create --file environment.yaml  
 
+## Dataset
+You can download ImageNet-C from a link [ImageNet-C 🔗](https://zenodo.org/record/2235448).  
+
+After downloading the dataset, move to the root directory ([data_root]) of datasets.  
+
+If you run on [ColoredMNIST 🔗](https://arxiv.org/abs/1907.02893) or [Waterbirds 🔗](https://arxiv.org/abs/1911.08731), run  
+> $ python pretrain_[dataset_name].py --root_dir [data_root] --dset [dataset_name]
+
+Then datasets are automatically downloaded in your [data_root] directory.  
+(ColoredMNIST from [torchvision 🔗](https://pytorch.org/vision/stable/index.html) and ./dataset/ColoredMNIST_dataset.py, Waterbirds from [wilds 🔗](https://pypi.org/project/wilds/) package)
+
+Your [data_root] will be as follows:
+```bash
+data_root
+├── ImageNet-C
+│   ├── brightness
+│   ├── contrast
+│   └── ...
+├── ColoredMNIST
+│   ├── ColoredMNIST_model.pickle
+│   ├── MNIST
+│   ├── train1.pt
+│   ├── train2.pt
+│   └── test.pt
+├── Waterbirds
+│   ├── metadata.csv
+│   ├── waterbirds_dataset.h5py
+│   ├── waterbirds_pretrained_model.pickle
+│   ├── 001. Black_footed_Albatross
+│   ├── 002. Laysan_Albatross
+└── └── ...
+```
+If you don't want to pre-train, you can just copy and paste the [dataset_name]_model.pickle from './pretrained/' directory.
