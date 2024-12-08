@@ -110,3 +110,22 @@ def make_dataset(dset_dir):
 
             cnt += 1
         f.close()
+
+
+def eval_waterbirds(net, val_loader, epoch_cnt):
+    correct_count = 0
+    total_count = 0
+    for labeled_batch in val_loader:
+        data = labeled_batch
+        x, y = data[0], data[1]
+        x = x.cuda()
+        y = y.cuda()
+
+        logits = net(x)
+
+        correct_count += (logits.argmax(dim=1) == y).sum().item()
+        total_count += len(logits)
+    print(
+        "Acc at epoch {}: {:.2f}%".format(epoch_cnt, correct_count / total_count * 100)
+    )
+    return 0
