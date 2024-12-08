@@ -121,3 +121,19 @@ def run_tent(args, net, logger):
     optimizer = torch.optim.SGD(params, args.lr, momentum=0.9)
     tented_model = tent.Tent(net, optimizer)
     return tented_model
+
+
+def def_run_tentx(module_name):
+    if module_name not in globals():
+        raise NotImplementedError(f"module {module_name} is not implemented.")
+
+    module = globals()[module_name]
+
+    def _run_tentx(args, net, logger):
+        net = module.configure_model(net)
+        params, param_names = module.collect_params(net)
+        optimizer = torch.optim.SGD(params, args.lr, momentum=0.9)
+        tented_model = module.TentX(net)
+        return tented_model
+
+    return _run_tentx
