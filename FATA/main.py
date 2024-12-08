@@ -137,3 +137,27 @@ def def_run_tentx(module_name):
         return tented_model
 
     return _run_tentx
+
+
+def def_run_deyox(module_name):
+    if module_name not in globals():
+        raise NotImplementedError(f"module {module_name} is not implemented.")
+
+    module = globals()[module_name]
+
+    def _run_deyo_aug(args, net, logger):
+        net = module.configure_model(net)
+        params, param_names = module.collect_params(net)
+
+        optimizer = torch.optim.SGD(params, args.lr, momentum=0.9)
+        adapt_model = module.DeYOAug(
+            net,
+            args,
+            optimizer,
+            deyo_margin=args.deyo_margin,
+            margin_e0=args.deyo_margin_e0,
+        )
+
+        return adapt_model
+
+    return _run_deyo_aug
