@@ -113,3 +113,11 @@ def validate(val_loader, model, args):
     logger.info(f"acc1s are {acc1s}")
     logger.info(f"acc5s are {acc5s}")
     return top1.avg, top5.avg
+
+
+def run_tent(args, net, logger):
+    net = tent.configure_model(net)
+    params, param_names = tent.collect_params(net)
+    optimizer = torch.optim.SGD(params, args.lr, momentum=0.9)
+    tented_model = tent.Tent(net, optimizer)
+    return tented_model
