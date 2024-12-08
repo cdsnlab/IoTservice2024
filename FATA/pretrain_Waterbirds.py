@@ -161,3 +161,115 @@ def test_waterbirds(net, test_loader, epoch_cnt):
         )
     )
     return 0
+
+
+if __name__ == "__main__":
+    assert args.root_dir is not None
+    assert args.dset_dir is not None
+
+    transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            # transforms.Resize((224, 224)),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
+    root_dir = args.root_dir
+    dset_dir = os.path.join(root_dir, args.dset_dir)
+    filename = os.path.join(root_dir, "waterbird_complete95_forest2water2.tar.gz")
+    if not os.path.isfile(os.path.join(dset_dir, "metadata.csv")):
+        download_dataset(root_dir)
+        print("Extracting data from tar file")
+        ap = tarfile.open(filename)
+        ap.extractall(root_dir)
+        ap.close()
+        os.rename(
+            os.path.join(root_dir, "waterbird_complete95_forest2water2"), dset_dir
+        )
+
+    assert os.path.isfile(os.path.join(dset_dir, "metadata.csv")) == True
+
+    dataset_file = os.path.join(dset_dir, "waterbirds_dataset.h5py")
+    if not os.path.isfile(dataset_file):
+        make_dataset(dset_dir)
+    else:
+        print("Dataset file already exists")
+
+    train_dataset = WaterbirdsDataset(dataset_file, "train", transform)
+    val_dataset = WaterbirdsDataset(dataset_file, "val", transform)
+    test_dataset = WaterbirdsDataset(dataset_file, "test", transform)
+
+    if not os.path.exists(os.path.join(dset_dir, "waterbirds_pretrained_model.pickle")):
+        train_loader = torch.utils.data.DataLoader(
+            train_dataset,
+            batch_size=args.batch_size,
+            shuffle=args.if_shuffle,
+            num_workers=args.workers,
+            pin_memory=True,
+        )
+        val_loader = torch.utils.data.DataLoader(
+            val_dataset,
+            batch_size=args.test_batch_size,
+            shuffle=False,
+            num_workers=args.workers,
+            pin_memory=True,
+        )
+        test_loader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_size=args.test_batch_size,
+            shuffle=False,
+            num_workers=args.workers,
+            pin_memory=True,
+        )
+
+        net = Resnet.__dict__["resnet50"](pretrained=True)
+        net.fc = torch.nn.Linear(in_features=net.fc.in_features, out_features=2)
+        net = net.cuda()
+        net.train()
+
+        # Train loop
+        CEloss = torch.nn.CrossEntropyLoss().cuda()
+        optimizer = torch.optim.SGD(
+            net.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0001
+        )
+        optimizer.zero_grad()
+        # net.train()
+        for epochs in tqdm(range(args.max_epochs)):
+            train_loader = torch.utils.data.DataLoader(
+                train_dataset,
+                batch_size=args.batch_size,
+                shuffle=True,
+                num_workers=2,
+                pin_memory=True,
+            )
+            for _, labeled_batch in enumerate((train_loader)):
+                data = labeled_batch
+                x, y = data[0], data[1]
+                x = x.cuda()
+                y = y.cuda()
+
+                logits = net(x)
+
+                loss = CEloss(logits, y)
+
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+
+            if epochs % args.interval == 0:
+                with torch.no_grad():
+                    net.eval()
+                    test_waterbirds(net, test_loader, epochs)
+                    net.train()
+
+        with torch.no_grad():
+            print("Final accuracy!")
+            net.eval()
+            with open(
+                file=os.path.join(dset_dir, "waterbirds_pretrained_model.pickle"),
+                mode="wb",
+            ) as f:
+                pickle.dump(net, f)
+            test_waterbirds(net, test_loader, epochs)
+    else:
+        print("Pretrained model already exists.")
