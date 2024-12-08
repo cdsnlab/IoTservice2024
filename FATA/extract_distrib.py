@@ -86,3 +86,34 @@ def extract_lyrft(net, loader):
     print([f.shape for f in results])
 
     torch.save(results, "/ssd1/tta/imagenet_val_resnet50_lyrfts.pth")
+
+
+def main():
+    net = Resnet.__dict__["resnet50"](pretrained=True)
+    net = net.cuda()
+    net.layer1.register_forward_hook(layer_hook)
+    net.layer2.register_forward_hook(layer_hook)
+    net.layer3.register_forward_hook(layer_hook)
+    net.layer4.register_forward_hook(layer_hook)
+
+    normalize = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+    transform = T.Compose(
+        [
+            T.Resize(256),
+            T.CenterCrop(224),
+            T.ToTensor(),
+            normalize,
+        ]
+    )
+
+    dataset = ImageFolder("/ssd1/datasets/ImageNet/val", transform=transform)
+    loader = DataLoader(dataset, batch_size=100, shuffle=False, num_workers=16)
+
+    # extract_clsft(net, loader)
+    extract_lyrft(net, loader)
+
+
+if __name__ == "__main__":
+    with torch.no_grad():
+        main()
