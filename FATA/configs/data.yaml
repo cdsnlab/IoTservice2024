@@ -1,0 +1,19 @@
+datasets:
+  cityscapes:
+    path: /ssd1/datasets/cityscapes/
+  cityscapes_c:
+    path: /ssd1/datasets/cityscapes-c/
+  ACDC:
+    path: /ssd1/datasets/ACDC
+  CIFAR10C:
+    path: /ssd1/datasets/corruptions
+  CIFAR100C:
+    path: /ssd1/datasets/corruptions
+  ImageNet-C:
+    path: /ssd1/datasets/corruptions
+  ImageNet:
+    path: /ssd1/datasets/ImageNet
+  CIFAR10:
+    path: /ssd1/datasets
+  CIFAR100:
+    path: /ssd1/datasets
