@@ -1,0 +1,56 @@
+exp_name: tb
+
+# data
+data_root: data
+output: experiments
+dset: ImageNet-C
+
+# experiment
+exp_type: normal  # normal, mix_shifts, bs1, label_shifts, spurious
+method: stent # no_adapt, tent, eata, sar, deyo
+model: resnet50_bn_torch # resnet50_bn_torch, vitbase_timm, resnet50_gn_timm
+patch_len: 4
+
+wandb_interval: 5
+wandb_log: 1
+
+seed: 0
+gpu: '0'
+debug: False
+continual: False
+
+# dataloader
+workers: 8
+test_batch_size: 64
+if_shuffle: True
+
+# corruption settings
+level: 5
+corruption: gaussian_noise
+
+# eata
+eata_fishers: 1
+fisher_size: 2000
+fisher_alpha: 2000.
+e_margin: 0.4
+d_margin: 0.05
+
+# sar
+sar_margin_e0: 0.4
+imbalance_ratio: 500000
+
+# DeYO
+aug_type: patch
+occlusion_size: 112
+row_start: 56
+column_start: 56
+deyo_margin: 0.5
+deyo_margin_e0: 0.4
+plpd_threshold: 0.2
+fishers: 0
+filter_ent: 1
+filter_plpd: 1
+reweight_ent: 1
+reweight_plpd: 1
+topk: 1000
+lr_mul: 1

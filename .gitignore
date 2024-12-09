@@ -1,0 +1,9 @@
+.idea
+output
+experiments
+wandb
+data
+.vscode
+*.pth
+*.npy
+*.csv
