@@ -97,3 +97,30 @@ def float_parameter(level, maxval):
     A float that results from scaling `maxval` according to `level`.
     """
     return float(level) * maxval / 10.
+
+def rand_lvl(n):
+    return np.random.uniform(low=0.1, high=n)
+
+
+augmentations = [
+    autocontrast,
+    equalize,
+    lambda x: rotate(x, 1),
+    lambda x: solarize(x, 1),
+    lambda x: shear_x(x, 1),
+    lambda x: shear_y(x, 1),
+    lambda x: translate_x(x, 1),
+    lambda x: translate_y(x, 1),
+    lambda x: posterize(x, 1),
+]
+
+mean = [0.485, 0.456, 0.406]
+std = [0.229, 0.224, 0.225]
+preprocess = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(mean, std)
+])
+preaugment = transforms.Compose([
+    transforms.RandomResizedCrop(224),
+    transforms.RandomHorizontalFlip(),
+])
