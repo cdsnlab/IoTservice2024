@@ -44,3 +44,17 @@ class ProgressMeter(object):
         num_digits = len(str(num_batches // 1))
         fmt = '{:' + str(num_digits) + 'd}'
         return '[' + fmt + '/' + fmt.format(num_batches) + ']'
+
+def save_checkpoint(state, is_best, save_dir=None):
+    checkpoint_path = os.path.join(save_dir, 'checkpoint.pth.tar')
+    torch.save(state, checkpoint_path)
+    if is_best:
+        best_checkpoint_path = os.path.join(save_dir, 'model_best.pth.tar')
+        shutil.copyfile(checkpoint_path, best_checkpoint_path)
+
+
+def adjust_learning_rate(optimizer, epoch, args):
+    """Sets the learning rate to the initial LR decayed by 10 every 10 epochs"""
+    lr = args.lr * (0.1 ** (epoch // 5))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
