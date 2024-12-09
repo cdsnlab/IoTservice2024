@@ -47,3 +47,55 @@ def set_reproducible(seed=0):
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+
+
+def get_logger(name: str, output_directory: str, log_name: str, debug: str) -> logging.Logger:
+    logger = logging.getLogger(name)
+
+    formatter = logging.Formatter(
+        "%(asctime)s %(levelname)-8s: %(message)s"
+    )
+
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    if output_directory is not None:
+        file_handler = logging.FileHandler(os.path.join(output_directory, log_name))
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+    if debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+
+    logger.propagate = False
+    return logger
+    
+
+def _sign(number):
+    if isinstance(number, (list, tuple)):
+        return [_sign(v) for v in number]
+    if number >= 0.0:
+        return 1
+    elif number < 0.0:
+        return -1
+
+
+def compute_kendall_tau(a, b):
+    '''
+    Kendall Tau is a metric to measure the ordinal association between two measured quantities.
+    Refer to https://en.wikipedia.org/wiki/Kendall_rank_correlation_coefficient
+    '''
+    assert len(a) == len(b), "Sequence a and b should have the same length while computing kendall tau."
+    length = len(a)
+    count = 0
+    total = 0
+    for i in range(length-1):
+        for j in range(i+1, length):
+            count += _sign(a[i] - a[j]) * _sign(b[i] - b[j])
+            total += 1
+    Ktau = count / total
+    return Ktau
+
