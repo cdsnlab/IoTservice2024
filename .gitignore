@@ -1,7 +1,6 @@
 .idea
 output
 experiments
-*.pyc
 wandb
 data
 .vscode
